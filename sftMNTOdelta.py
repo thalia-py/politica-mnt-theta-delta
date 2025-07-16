@@ -331,8 +331,8 @@ def calcular_metricas_completas(T, N, M, delta, params):
     Retorna None se os parâmetros forem inválidos ou der erro.
     """
     try:
-        # 1) Validações iniciais
-        if M >= N or N < 1 or T <= 0:
+        # 1) Validações iniciais (CORRIGIDO: M > N em vez de M >= N)
+        if M > N or N < 1 or T <= 0:
             return None
         Z = int(delta / T)
         Y = max(0, N - Z - 1)
@@ -384,7 +384,7 @@ def calcular_metricas_completas(T, N, M, delta, params):
         # 6) Calcula métricas finais
         custo = EC / EL
         disponibilidade = 1 - (ED / EL)
-        # MTBOF = tempo médio até falha = EL / probabilidade de falha (p6 ou 1-p1?
+        # MTBOF = tempo médio até falha = EL / probabilidade de falha
         MTBOF = EL / (p6 if p6 > 0 else 1)
 
         return {
