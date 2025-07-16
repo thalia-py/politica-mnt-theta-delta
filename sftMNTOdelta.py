@@ -639,7 +639,7 @@ if 'politica_manual' in st.session_state:
     
     st.markdown("##### Selecione os Parâmetros com Incerteza (%)")
     
-    n_simulacoes = st.number_input("Tamanho da amostra de simulações", 100, 5000, 200, 100)
+    n_simulacoes = st.number_input("Tamanho da amostra de simulações", 100, 500, 200, 100)
     
     variacoes_parametros = {}
     
