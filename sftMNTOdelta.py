@@ -60,7 +60,7 @@ with col2:
     st.markdown("""
         <div style='display: flex; align-items: center; height: 100%;'>
             <h1 style='color: darkgreen; text-align: left; font-size: 28px;'>
-                Política de Manutenção Baseada em Inspeções com Atraso (MNTθδ)
+                Política de Inspeção e Manutenção Preventiva com Aproveitamento de Oportunidades (MNTθδ)
             </h1>
         </div>
     """, unsafe_allow_html=True)
@@ -453,7 +453,7 @@ with col_params2:
 
 st.markdown("---")
 st.markdown("###### Parâmetros do Custo de Reposição Antecipada `Cep(δ)`")
-st.markdown("_Define o custo em função do tempo de atraso `δ`")
+st.markdown("Define o custo em função do tempo de atraso `δ`")
 
 # Bloco de código corrigido sem valores pré-preenchidos e com formatação consistente
 
@@ -461,7 +461,7 @@ cep_col1, cep_col2, cep_col3 = st.columns(3)
 
 with cep_col1:
     delta_min_ui = st.number_input(
-        "δ Mínimo (dias)", 
+        "δ Mínimo", 
         min_value=0.1, 
         help="Define o menor tempo de resposta possível para uma manutenção após a detecção de um defeito.",
         format="%.7f",
@@ -476,7 +476,7 @@ with cep_col2:
     )
 with cep_col3:
     delta_limite_ui = st.number_input(
-        "δ Limite (dias)", 
+        "δ Limite", 
         help="Limite de tempo. Para atrasos (δ) maiores que este, o custo se torna o mesmo que o de uma preventiva programada (Cp).",
         format="%.7f",
         step=0.0000001
