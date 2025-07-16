@@ -461,8 +461,7 @@ cep_col1, cep_col2, cep_col3 = st.columns(3)
 
 with cep_col1:
     delta_min_ui = st.number_input(
-        "δ Mínimo", 
-        min_value=0.1, 
+        "δ Mínimo",  
         help="Define o menor tempo de resposta possível para uma manutenção após a detecção de um defeito.",
         format="%.7f",
         step=0.0000001
