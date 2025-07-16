@@ -147,14 +147,14 @@ def calcular_cenario2(T, N, M, Y, delta, Ci, Cp, Cop, Cf, Dp, Df, betax, etax, b
     ec2 = 0
     if M < Y:
         for i in range(1, Y - M + 1):
-            cost_interval = (M + i - 1) * Ci + Cop # Corrigido para usar Cop
+            cost_interval = (M + i - 1) * Ci + Cop 
             integral_interval, _ = quad(integrand_p, (i-1)*T, i*T)
             ec2 += cost_interval * integral_interval
-        cost_final_interval = Y * Ci + Cop # Corrigido para usar Cop
+        cost_final_interval = Y * Ci + Cop 
         integral_final, _ = quad(integrand_p, (Y-M)*T, (N-M)*T)
         ec2 += cost_final_interval * integral_final
     else:
-        cost_total = Y * Ci + Cop # Corrigido para usar Cop
+        cost_total = Y * Ci + Cop 
         ec2 = cost_total * p2
     ed2 = Dp * p2
     return p2, ec2, el2, ed2
@@ -455,32 +455,32 @@ st.markdown("---")
 st.markdown("###### Parâmetros do Custo de Reposição Antecipada `Cep(δ)`")
 st.markdown("_Define o custo em função do tempo de atraso `δ`")
 
+# Bloco de código corrigido sem valores pré-preenchidos e com formatação consistente
+
 cep_col1, cep_col2, cep_col3 = st.columns(3)
 
 with cep_col1:
     delta_min_ui = st.number_input(
-        "δ Mínimo",
-        min_value=0.1,
-        step=0.1,
-        help="Menor valor de atraso considerado no modelo."
+        "δ Mínimo (dias)", 
+        min_value=0.1, 
+        help="Define o menor tempo de resposta possível para uma manutenção após a detecção de um defeito.",
+        format="%.7f",
+        step=0.0000001
     )
-
 with cep_col2:
     Cep_max_ui = st.number_input(
-        "Custo para δ Mínimo (Cep_max)",
-        min_value=0.0,
-        step=10.0,
-        help="Custo associado à substituição mais rápida (menor δ)."
+        "Custo para δ Mínimo (Cep_max)", 
+        help="Custo da manutenção se realizada no tempo mais rápido possível (em δ Mínimo).",
+        format="%.7f",
+        step=0.0000001
     )
-
 with cep_col3:
     delta_limite_ui = st.number_input(
-        "δ Limite",
-        min_value=0.1,
-        step=0.1,
-        help="Valor de δ a partir do qual o custo Cep(δ) permanece constante."
+        "δ Limite (dias)", 
+        help="Limite de tempo. Para atrasos (δ) maiores que este, o custo se torna o mesmo que o de uma preventiva programada (Cp).",
+        format="%.7f",
+        step=0.0000001
     )
-
 
 # --- Montagem do dicionário 'params' ---
 # 1. Primeiro, criei o dicionário com os valores lidos da interface.
@@ -540,7 +540,7 @@ if st.button("▶️ Iniciar Otimização"):
         start_time = time.time()
         resultado = differential_evolution(objetivo, bounds, maxiter=50, popsize=15, tol=0.01, disp=False)
         end_time = time.time()
-        st.info(f"Otimização concluída em {end_time - start_time:.2f} segundos.")
+        st.info(f"Otimização concluída em {(end_time - start_time) / 60:.2f} minutos.")
 
     # Exibe os resultados se a otimização for bem-sucedida
     if resultado.success:
@@ -586,8 +586,8 @@ if st.button("▶️ Iniciar Otimização"):
 st.header("🧪 Avaliação de Política Pré-Definida")
 col_man1, col_man2, col_man3, col_man4 = st.columns(4)
 T_manual = col_man1.number_input("Valor de T", step=10.0, key="T_man")
-N_manual = col_man2.number_input("Valor de N", step=1, min_value=1, key="N_man")
 M_manual = col_man3.number_input("Valor de M", step=1, min_value=0, key="M_man")
+N_manual = col_man2.number_input("Valor de N", step=1, min_value=1, key="N_man")
 # O min_value agora é dinâmico, baseado no que foi inserido na interface.
 delta_manual = col_man4.number_input("Valor de δ", step=10.0, min_value=params['delta_min'], key="delta_man")
 
