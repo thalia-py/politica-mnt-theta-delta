@@ -526,10 +526,10 @@ if st.button("▶️ Iniciar Otimização"):
     # Define os limites (bounds) para cada variável de otimização: [T, M, N, delta]
     # É uma boa prática garantir que o limite superior de M seja menor que o inferior de N.
     bounds = [
-        (1.0, 200.0),                          # Limites para T
-        (1, 19),                               # Limites para M
-        (2, 20),                               # Limites para N (deve ser sempre > M)
-        (params['delta_min'], 300.0)           # Limites para delta (usando o valor da interface)
+        (1.0, 200.0),  # T: entre 1 e 200
+        (1, 20),       # M: entre 1 e 20
+        (1, 20),       # N: entre 1 e 20 (permite N >= M)
+        (params['delta_min'], 300.0)  # delta: entre delta_min e 300
     ]
 
     # Inicia a otimização com uma mensagem de espera
