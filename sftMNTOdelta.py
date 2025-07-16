@@ -586,8 +586,8 @@ if st.button("▶️ Iniciar Otimização"):
 st.header("🧪 Avaliação de Política Pré-Definida")
 col_man1, col_man2, col_man3, col_man4 = st.columns(4)
 T_manual = col_man1.number_input("Valor de T", step=10.0, key="T_man")
-M_manual = col_man3.number_input("Valor de M", step=1, min_value=0, key="M_man")
-N_manual = col_man2.number_input("Valor de N", step=1, min_value=1, key="N_man")
+M_manual = col_man2.number_input("Valor de M", step=1, min_value=0, key="M_man")
+N_manual = col_man3.number_input("Valor de N", step=1, min_value=1, key="N_man")
 # O min_value agora é dinâmico, baseado no que foi inserido na interface.
 delta_manual = col_man4.number_input("Valor de δ", step=10.0, min_value=params['delta_min'], key="delta_man")
 
