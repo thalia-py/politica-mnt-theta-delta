@@ -589,7 +589,9 @@ N_manual = col_man3.number_input("Valor de N", step=1, min_value=1, key="N_man")
 delta_manual = col_man4.number_input("Valor de δ", step=10.0, min_value=params['delta_min'], key="delta_man")
 
 if st.button("📊 Avaliar Política"):
-    if M_manual >= N_manual: st.error("Erro: M deve ser menor que N.")
+    # Apenas M > N deve ser um erro, M = N é permitido pela constraint M <= N
+    if M_manual > N_manual:
+        st.error("Erro: M não pode ser maior que N.")
     else:
         with st.spinner("Calculando desempenho..."):
             metricas_manuais = calcular_metricas_completas(T_manual, N_manual, M_manual, delta_manual, params)
