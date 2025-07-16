@@ -455,8 +455,6 @@ st.markdown("---")
 st.markdown("###### Parâmetros do Custo de Reposição Antecipada `Cep(δ)`")
 st.markdown("Define o custo em função do tempo de atraso `δ`")
 
-# Bloco de código corrigido sem valores pré-preenchidos e com formatação consistente
-
 cep_col1, cep_col2, cep_col3 = st.columns(3)
 
 with cep_col1:
