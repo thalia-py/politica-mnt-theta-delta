@@ -539,43 +539,38 @@ if st.button("▶️ Iniciar Otimização"):
         end_time = time.time()
         st.info(f"Otimização concluída em {(end_time - start_time) / 60:.2f} minutos.")
 
-    # Exibe os resultados se a otimização for bem-sucedida
-    if resultado.success:
-        # Pega os valores ótimos encontrados
-        T_final, M_final, N_final, delta_final = resultado.x
-        custo_minimo = resultado.fun
-        
-        # Arredonda M e N para os valores inteiros finais
-        N_final_int = int(round(N_final))
-        M_final_int = int(round(M_final))
-        
-        # Recalcula as métricas finais com a solução ótima para obter todos os indicadores
-        metricas_otimas = calcular_metricas_completas(T_final, N_final_int, M_final_int, delta_final, params)
+# --- EXIBIÇÃO DOS RESULTADOS ---
+    # Pega os melhores valores encontrados
+    T_final, M_final, N_final, delta_final = resultado.x
+    custo_minimo = resultado.fun
+    
+    # Arredonda M e N para os valores inteiros finais
+    N_final_int = int(round(N_final))
+    M_final_int = int(round(M_final))
+    
+    # Recalcula as métricas finais com a melhor solução encontrada
+    metricas_otimas = calcular_metricas_completas(T_final, N_final_int, M_final_int, delta_final, params)
 
-        if metricas_otimas:
-            st.success("Encontrada uma solução ótima!")
+    if metricas_otimas:
+        # Armazena os resultados no session_state para uso posterior
+        st.session_state['politica_otimizada'] = (T_final, N_final_int, M_final_int, delta_final)
 
-            # Armazena os resultados no session_state para uso posterior (ex: Análise de Sensibilidade)
-            st.session_state['politica_otimizada'] = (T_final, N_final_int, M_final_int, delta_final)
+        # Exibe as variáveis de decisão ótimas
+        st.markdown("##### 🔍 Política Ótima Encontrada")
+        r_col1, r_col2, r_col3, r_col4 = st.columns(4)
+        r_col1.metric("🕒 T ótimo", f"{T_final:.2f}")
+        r_col2.metric("🔢 M ótimo", f"{M_final_int}")
+        r_col3.metric("🔢 N ótimo", f"{N_final_int}")
+        r_col4.metric("⏱️ δ ótimo", f"{delta_final:.2f}")
 
-            # Exibe as variáveis de decisão ótimas
-            st.markdown("##### 🔍 Política Ótima Encontrada")
-            r_col1, r_col2, r_col3, r_col4 = st.columns(4)
-            r_col1.metric("🕒 T ótimo", f"{T_final:.2f}")
-            r_col2.metric("🔢 M ótimo", f"{M_final_int}")
-            r_col3.metric("🔢 N ótimo", f"{N_final_int}")
-            r_col4.metric("⏱️ δ ótimo", f"{delta_final:.2f}")
-
-            # Exibe as métricas de desempenho ótimas
-            st.markdown("##### 🎯 Desempenho da Política Ótima")
-            m_col1, m_col2, m_col3 = st.columns(3)
-            m_col1.metric("💰 Custo Mínimo", f"{custo_minimo:.4f}")
-            m_col2.metric("📈 Disponibilidade", f"{metricas_otimas['Disponibilidade']:.2%}")
-            m_col3.metric("🛠️ MTBOF", f"{metricas_otimas['MTBOF']:.2f}")
-        else:
-            st.error("A otimização encontrou uma combinação de parâmetros instável. Tente novamente.")
+        # Exibe as métricas de desempenho ótimas
+        st.markdown("##### 🎯 Desempenho da Política Ótima")
+        m_col1, m_col2, m_col3 = st.columns(3)
+        m_col1.metric("💰 Custo Mínimo", f"{custo_minimo:.4f}")
+        m_col2.metric("📈 Disponibilidade", f"{metricas_otimas['Disponibilidade']:.2%}")
+        m_col3.metric("🛠️ MTBOF", f"{metricas_otimas['MTBOF']:.2f}")
     else:
-        st.error("A otimização não convergiu. Tente ajustar os limites ('bounds') ou aumentar o número de iterações ('maxiter').")
+        st.error("A otimização encontrou uma combinação de parâmetros instável. Tente novamente.")
 
 # =============================================================================
 # SEÇÃO DE AVALIAÇÃO MANUAL
@@ -730,3 +725,4 @@ st.markdown("""
     <a href='http://random.org.br' target='_blank' style='color:#888;'>Acesse o site do RANDOM</a>
 </div>
 """, unsafe_allow_html=True)
+
