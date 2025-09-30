@@ -863,21 +863,19 @@ if st.button("▶️ Iniciar Otimização"):
         """
         # Desempacota os parâmetros da otimização
         T_val, M_val, N_val, delta_val = x
-        
-        # Converte M e N para inteiros, pois o otimizador trabalha com floats
+
+        # Converte M e N para inteiros
         M_val_int = int(round(M_val))
         N_val_int = int(round(N_val))
-        
-        # Chama a função de cálculo principal.
-        # Ela já retorna 'None' se a política for inválida (ex: M >= N).
-        resultados = calcular_metricas_completas(T_val, N_val_int, M_val_int, delta_val, params)
 
-        # Se a política for inválida, retorna um custo altíssimo (penalidade).
-        if resultados is None:
+        # Chama a simulação
+        resultado = calcular_metricas_completas(T_val, N_val_int, M_val_int, delta_val, params)
+
+        # Se for inválido, retorna penalização alta
+        if resultado is None or "Custo" not in resultado:
             return 1e9
-        
-        # Retorna a Taxa de Custo para ser minimizada.
-        return resultados["Custo"]
+        else:
+            return resultado["Custo"]
 
     # Define os limites (bounds) para cada variável de otimização: [T, M, N, delta]
     # É uma boa prática garantir que o limite superior de M seja menor que o inferior de N.
@@ -1081,5 +1079,6 @@ st.markdown("""
     <a href='http://random.org.br' target='_blank' style='color:#888;'>Acesse o site do RANDOM</a>
 </div>
 """, unsafe_allow_html=True)
+
 
 
