@@ -902,7 +902,13 @@ if st.button("▶️ Iniciar Otimização"):
         if results_otimos and results_otimos[4] != 1e9: # Verifica se não é o valor de penalidade
             st.session_state['politica_otimizada'] = (T_final_real, N_final_int, M_final_int, delta_final_real)
             # ... (código de exibição da política ótima)
-            
+                        # 1. BLOCO QUE EXIBE AS VARIÁVEIS DE DECISÃO (MNTdelta) - RESTAURADO
+            st.markdown("##### 🔍 Política Ótima Encontrada")
+            r_col1, r_col2, r_col3, r_col4 = st.columns(4)
+            r_col1.metric("🕒 T ótimo", f"{T_final_real:.2f}")
+            r_col2.metric("🔢 M ótimo", f"{M_final_int}")
+            r_col3.metric("🔢 N ótimo", f"{N_final_int}")
+            r_col4.metric("⏱️ δ ótimo", f"{delta_final_real:.2f}")
             # métricas
             m_col1, m_col2, m_col3 = st.columns(3)
             # O custo mínimo já vem do resultado da otimização:
@@ -910,6 +916,9 @@ if st.button("▶️ Iniciar Otimização"):
             # As outras métricas vêm de results_otimos:
             # m_col2.metric("📈 Disponibilidade", f"{results_otimos[6]:.2%}") # results_otimos[6] é availability
             m_col3.metric("🛠️ MTBOF", f"{results_otimos[5]:.2f}") # results_otimos[5] é MTBOF
+
+        else:
+            st.error("A política ótima é inválida para esta parametrização ou a otimização falhou.")
 
 # =============================================================================
 # SEÇÃO DE AVALIAÇÃO MANUAL
@@ -1068,6 +1077,7 @@ st.markdown("""
     <a href='http://random.org.br' target='_blank' style='color:#888;'>Acesse o site do RANDOM</a>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
