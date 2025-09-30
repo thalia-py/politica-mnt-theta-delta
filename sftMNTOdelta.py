@@ -679,78 +679,6 @@ def policy(L,M,N,T,delta,beta_x,eta_x,beta_h,eta_h,lbda,Cp,Cop,Ci,Coi,Cf,Cep_max
     
     
     return (P_total, EC, EV, ED, cost_rate, MTBOF, availability, P1, P2, P3, P4, P5, P6)
-def calcular_metricas_completas(T, N, M, delta, params):
-    """
-    Calcula Custo, Disponibilidade e MTBOF para a política.
-    Retorna None se os parâmetros forem inválidos ou der erro.
-    """
-    try:
-        # 1) Validações iniciais (CORRIGIDO: M > N em vez de M >= N)
-        if M > N or N < 1 or T <= 0:
-            return None
-        L = M
-        Z = int(delta / T)
-        Y = max(0, N - Z - 1)
-        if Y >= N:
-            return None
-
-        # 2) Extrai parâmetros
-        betax, etax = params['betax'], params['etax']
-        betah, etah = params['betah'], params['etah']
-        lambd = params['lambd']
-        Ci, Cp, Cop, Cf = params['Ci'], params['Cp'], params['Cop'], params['Cf']
-        Dp, Df = params['Dp'], params['Df']
-        Coi = Ci
-
-        # 3) Executa os 6 cenários 
-        p1, ec1, el1, ed1 = calcular_cenario1(
-            T, N, M, Y, delta, Ci, Cp, Cop, Cf, Dp, Df,
-            betax, etax, betah, etah, lambd
-        )
-        p2, ec2, el2, ed2 = calcular_cenario2(
-            T, N, M, Y, delta, Ci, Cp, Cop, Cf, Dp, Df,
-            betax, etax, betah, etah, lambd
-        )
-        p3, ec3, el3, ed3 = calcular_cenario3(
-            T, N, M, Y, delta, Ci, Cp, Cop, Cf, Dp, Df,
-            betax, etax, betah, etah, lambd
-        )
-        p4, ec4, el4, ed4 = calcular_cenario4(
-            T, N, M, Y, delta, Ci, Cp, Cop, Cf, Dp, Df,
-            betax, etax, betah, etah, lambd
-        )
-        p5, ec5, el5, ed5 = calcular_cenario5(
-            T, N, M, Y, delta, Ci, Cp, Cop, Cf, Dp, Df,
-            betax, etax, betah, etah, lambd
-        )
-        p6, ec6, el6, ed6 = calcular_cenario6(
-            T, N, M, Y, delta, Ci, Cp, Cop, Cf, Dp, Df,
-            betax, etax, betah, etah, lambd
-        )
-
-        # 4) Soma acumulada
-        EC = ec1 + ec2 + ec3 + ec4 + ec5 + ec6
-        EL = el1 + el2 + el3 + el4 + el5 + el6
-        ED = ed1 + ed2 + ed3 + ed4 + ed5 + ed6
-
-        # 5) Evita divisão por zero
-        if EL <= 0:
-            return None
-
-        # 6) Calcula métricas finais
-        custo = EC / EL
-        disponibilidade = 1 - (ED / EL)
-        # MTBOF = tempo médio até falha = EL / probabilidade de falha
-        MTBOF = EL / (p6 if p6 > 0 else 1)
-
-        return {
-            "Custo": custo,
-            "Disponibilidade": disponibilidade,
-            "MTBOF": MTBOF
-        }
-    except Exception as e:
-        print(f"[ERRO objetivo] falha ao avaliar x={x}: {e}")
-        return 1e9
 # =============================================================================
 # SEÇÃO DE PARÂMETROS DO MODELO
 # =============================================================================
@@ -959,27 +887,28 @@ if st.button("▶️ Iniciar Otimização"):
         x_opt = resultado.x
         T_final_real, M_final_int, N_final_int, delta_final_real, L_final = map_normalized_to_vars(x_opt, params)
 
-        # Recalcula métricas finais com a melhor solução encontrada (usa sua função existente)
-        metricas_otimas = calcular_metricas_completas(T_final_real, N_final_int, M_final_int, delta_final_real, params)
+        # Recalcula métricas finais com a melhor solução encontrada USANDO A FUNÇÃO POLICY()
 
-        if metricas_otimas:
+        results_otimos = policy(
+            M_final_int, N_final_int, T_final_real, delta_final_real,
+            params['betax'], params['etax'], params['betah'], params['etah'],
+            params['lambd'], params['Cp'], params['Cop'], params['Ci'], params['Ci'], # Coi = Ci
+            params['Cf'], params['Cep_max'], params['delta_min'], params['delta_limite'],
+            params['Dp'], params['Df']
+        )
+ 
+        # A nova lógica de exibição usará o vetor 'results_otimos' em vez do dicionário:
+        if results_otimos and results_otimos[4] != 1e9: # Verifica se não é o valor de penalidade
             st.session_state['politica_otimizada'] = (T_final_real, N_final_int, M_final_int, delta_final_real)
-            st.markdown("##### 🔍 Política Ótima Encontrada")
-            r_col1, r_col2, r_col3, r_col4 = st.columns(4)
-            r_col1.metric("🕒 T ótimo", f"{T_final_real:.2f}")
-            r_col2.metric("🔢 M ótimo", f"{M_final_int}")
-            r_col3.metric("🔢 N ótimo", f"{N_final_int}")
-            r_col4.metric("⏱️ δ ótimo", f"{delta_final_real:.2f}")
-
+            # ... (código de exibição da política ótima)
+            
             # métricas
             m_col1, m_col2, m_col3 = st.columns(3)
-            m_col1.metric("💰 Custo Mínimo", f"{resultado.fun:.4f}")
-            # se você não quer mostrar disponibilidade, não exiba aqui (veja abaixo)
-            # m_col2.metric("📈 Disponibilidade", f"{metricas_otimas['Disponibilidade']:.2%}")
-            m_col3.metric("🛠️ MTBOF", f"{metricas_otimas['MTBOF']:.2f}")
-    else:
-        #st.error("A otimização encontrou uma combinação de parâmetros instável. Tente novamente.")
-        pass
+            # O custo mínimo já vem do resultado da otimização:
+            m_col1.metric("💰 Custo Mínimo", f"{resultado.fun:.4f}") 
+            # As outras métricas vêm de results_otimos:
+            # m_col2.metric("📈 Disponibilidade", f"{results_otimos[6]:.2%}") # results_otimos[6] é availability
+            m_col3.metric("🛠️ MTBOF", f"{results_otimos[5]:.2f}") # results_otimos[5] é MTBOF
 
 # =============================================================================
 # SEÇÃO DE AVALIAÇÃO MANUAL
@@ -998,18 +927,29 @@ if st.button("📊 Avaliar Política"):
         st.error("Erro: M não pode ser maior que N.")
     else:
         with st.spinner("Calculando desempenho..."):
-            metricas_manuais = calcular_metricas_completas(T_manual, N_manual, M_manual, delta_manual, params)
-        if metricas_manuais:
+            # Chama a função policy() diretamente
+            results_manuais = policy(
+                M_manual, N_manual, T_manual, delta_manual,
+                params['betax'], params['etax'], params['betah'], params['etah'],
+                params['lambd'], params['Cp'], params['Cop'], params['Ci'], params['Ci'], # Coi = Ci
+                params['Cf'], params['Cep_max'], params['delta_min'], params['delta_limite'],
+                params['Dp'], params['Df']
+            )
+            
+        # Verifica se a chamada retornou um valor válido (e não o de penalidade)
+        if results_manuais and results_manuais[4] != 1e9:
             st.markdown("##### 🎯 Desempenho da Política Informada")
             res_col1, res_col2, res_col3 = st.columns(3)
-            res_col1.metric("💰 Taxa de Custo", f"R$ {metricas_manuais['Custo']:.4f}")
-            res_col2.metric("📈 Disponibilidade", f"{metricas_manuais['Disponibilidade']:.2%}")
-            res_col3.metric("🛠️ MTBOF", f"{metricas_manuais['MTBOF']:.2f}")
+            # results_manuais[4] é cost_rate
+            res_col1.metric("💰 Taxa de Custo", f"R$ {results_manuais[4]:.4f}") 
+            # results_manuais[6] é availability
+            res_col2.metric("📈 Disponibilidade", f"{results_manuais[6]:.2%}") 
+            # results_manuais[5] é MTBOF
+            res_col3.metric("🛠️ MTBOF", f"{results_manuais[5]:.2f}") 
             st.session_state['politica_manual'] = (T_manual, N_manual, M_manual, delta_manual)
         else:
             st.error("Política inválida ou erro no cálculo.")
-st.markdown("---")
-
+             
 # =============================================================================
 # SEÇÃO DE ANÁLISE DE SENSIBILIDADE
 # =============================================================================
@@ -1125,6 +1065,7 @@ st.markdown("""
     <a href='http://random.org.br' target='_blank' style='color:#888;'>Acesse o site do RANDOM</a>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
