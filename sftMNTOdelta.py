@@ -1051,10 +1051,10 @@ if 'politica_manual' in st.session_state:
 
             st.subheader("Box-plots dos Resultados")
 
-            # Cria a figura com 3 subplots para as 3 métricas
-            fig, axes = plt.subplots(1, 3, figsize=(18, 6))
+            # CORREÇÃO CRÍTICA: Cria a figura com APENAS 2 subplots (1 linha, 2 colunas)
+            fig, axes = plt.subplots(1, 2, figsize=(12, 6)) # figsize reduzido para 2 gráficos
 
-            # --- Gráfico 1: Custo ---
+            # --- Gráfico 1: Custo (agora no axes[0]) ---
             axes[0].boxplot(df_resultados['Custo'], vert=False, patch_artist=True, boxprops=dict(facecolor='skyblue'))
             media_custo = df_resultados['Custo'].mean()
             std_custo = df_resultados['Custo'].std()
@@ -1063,16 +1063,17 @@ if 'politica_manual' in st.session_state:
                          transform=axes[0].transAxes, fontsize=10, color='black',
                          verticalalignment='top', horizontalalignment='left')
             
-            # --- Gráfico 3: MTBOF ---
-            axes[2].boxplot(df_resultados['MTBOF'], vert=False, patch_artist=True, boxprops=dict(facecolor='lightgreen'))
+            # --- Gráfico 2: MTBOF (agora no axes[1]) ---
+            # O índice mudou de axes[2] para axes[1]
+            axes[1].boxplot(df_resultados['MTBOF'], vert=False, patch_artist=True, boxprops=dict(facecolor='lightgreen'))
             media_mtbof = df_resultados['MTBOF'].mean()
             std_mtbof = df_resultados['MTBOF'].std()
-            axes[2].set_title('Box-plot para MTBOF', loc='left', fontsize=12, color='black')
-            axes[2].text(0.02, 0.95, f"Média = {media_mtbof:.2f}\nDesvio Padrão = {std_mtbof:.2f}",
-                         transform=axes[2].transAxes, fontsize=10, color='black',
+            axes[1].set_title('Box-plot para MTBOF', loc='left', fontsize=12, color='black')
+            axes[1].text(0.02, 0.95, f"Média = {media_mtbof:.2f}\nDesvio Padrão = {std_mtbof:.2f}",
+                         transform=axes[1].transAxes, fontsize=10, color='black',
                          verticalalignment='top', horizontalalignment='left')
 
-            # Salva a figura em um buffer de memória para exibir com st.image
+            # O restante do código de salvamento e exibição permanece o mesmo...
             fig.tight_layout()
             buf = io.BytesIO()
             fig.savefig(buf, format="png")
@@ -1095,6 +1096,7 @@ st.markdown("""
     <a href='http://random.org.br' target='_blank' style='color:#888;'>Acesse o site do RANDOM</a>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
