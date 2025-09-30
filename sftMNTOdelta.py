@@ -890,6 +890,7 @@ if st.button("▶️ Iniciar Otimização"):
         # Recalcula métricas finais com a melhor solução encontrada USANDO A FUNÇÃO POLICY()
 
         results_otimos = policy(
+            L_final, # Este deve ser o primeiro argumento
             M_final_int, N_final_int, T_final_real, delta_final_real,
             params['betax'], params['etax'], params['betah'], params['etah'],
             params['lambd'], params['Cp'], params['Cop'], params['Ci'], params['Ci'], # Coi = Ci
@@ -929,6 +930,8 @@ if st.button("📊 Avaliar Política"):
         with st.spinner("Calculando desempenho..."):
             # Chama a função policy() diretamente
             results_manuais = policy(
+                # PASSA M_manual COMO O PRIMEIRO ARGUMENTO (L):
+                M_manual,
                 M_manual, N_manual, T_manual, delta_manual,
                 params['betax'], params['etax'], params['betah'], params['etah'],
                 params['lambd'], params['Cp'], params['Cop'], params['Ci'], params['Ci'], # Coi = Ci
@@ -1065,6 +1068,7 @@ st.markdown("""
     <a href='http://random.org.br' target='_blank' style='color:#888;'>Acesse o site do RANDOM</a>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
