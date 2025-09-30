@@ -748,7 +748,9 @@ def calcular_metricas_completas(T, N, M, delta, params):
             "Disponibilidade": disponibilidade,
             "MTBOF": MTBOF
         }
-
+            except Exception as e:
+        print(f"[ERRO objetivo] falha ao avaliar x={x}: {e}")
+        return 1e9
 # =============================================================================
 # SEÇÃO DE PARÂMETROS DO MODELO
 # =============================================================================
@@ -1123,6 +1125,7 @@ st.markdown("""
     <a href='http://random.org.br' target='_blank' style='color:#888;'>Acesse o site do RANDOM</a>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
