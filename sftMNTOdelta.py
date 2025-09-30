@@ -963,7 +963,7 @@ if st.button("📊 Avaliar Política"):
             st.error("Política inválida ou erro no cálculo.")
              
 # =============================================================================
-# SEÇÃO DE ANÁLISE DE SENSIBILIDADE
+# SEÇÃO DE ANÁLISE DE SENSIBILIDADE 
 # =============================================================================
 
 def analise_sensibilidade_mnt(T, N, M, delta, parametros_base, n_simulacoes, variacoes_parametros):
@@ -978,12 +978,30 @@ def analise_sensibilidade_mnt(T, N, M, delta, parametros_base, n_simulacoes, var
         for param, variacao in variacoes_parametros.items():
             perturbacao = np.random.uniform(1 - variacao, 1 + variacao)
             parametros_simulados[param] *= perturbacao
+            
+        # Define L=M para a chamada da política
+        L = M 
         
-        # Calcula as métricas para a política com os parâmetros perturbados
-        metricas = calcular_metricas_completas(T, N, M, delta, parametros_simulados)
+        # Chama a função policy() com os parâmetros perturbados (CORRIGIDO AQUI!)
+        results = policy(
+            L, M, N, T, delta,
+            parametros_simulados['betax'], parametros_simulados['etax'], 
+            parametros_simulados['betah'], parametros_simulados['etah'],
+            parametros_simulados['lambd'], parametros_simulados['Cp'], 
+            parametros_simulados['Cop'], parametros_simulados['Ci'], 
+            parametros_simulados['Ci'], # Coi = Ci
+            parametros_simulados['Cf'], parametros_simulados['Cep_max'], 
+            parametros_simulados['delta_min'], parametros_simulados['delta_limite'],
+            parametros_simulados['Dp'], parametros_simulados['Df']
+        )
         
-        if metricas:
-            resultados.append(metricas)
+        # Extrai os resultados [4]=cost_rate, [5]=MTBOF, [6]=availability
+        if results and results[4] != 1e9:
+             resultados.append({
+                "Custo": results[4],
+                "Disponibilidade": results[6],
+                "MTBOF": results[5]
+            })
 
     # Retorna um DataFrame com os resultados
     return pd.DataFrame(resultados)
@@ -1077,6 +1095,7 @@ st.markdown("""
     <a href='http://random.org.br' target='_blank' style='color:#888;'>Acesse o site do RANDOM</a>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
