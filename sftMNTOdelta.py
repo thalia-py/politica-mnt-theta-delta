@@ -749,10 +749,6 @@ def calcular_metricas_completas(T, N, M, delta, params):
             "MTBOF": MTBOF
         }
 
-    except Exception as e:
-        print(f"[ERRO] Simulação falhou para T={T},N={N},M={M},δ={delta}: {e}")
-        return None
-
 # =============================================================================
 # SEÇÃO DE PARÂMETROS DO MODELO
 # =============================================================================
@@ -852,38 +848,98 @@ st.markdown("---")
 # SEÇÃO DE OTIMIZAÇÃO
 # =============================================================================
 st.header("⚙️ Otimização da Política")
+# --- Helper: mapeia vetor normalizado x -> variáveis reais (T, M, N, delta) ---
+def map_normalized_to_vars(x, params):
+    """
+    x: array-like com 4 elementos normalizados em [0,1]:
+      x[0] -> frac_M  (proporção de M em relação a N)
+      x[1] -> frac_N  (proporção para escolher N dentro de um máximo plausível)
+      x[2] -> frac_T  (proporção para escolher T)
+      x[3] -> frac_delta (proporção para escolher delta relativo a N*T)
+    Retorna: T_real (float), M_int, N_int, delta_real (float), L (int)
+    """
+    # parâmetros usados no mapeamento
+    Cp = params['Cp']
+    Ci = params['Ci']
+    eta_x = params['etax']
+    eta_h = params['etah']
+    delta_min = params['delta_min']
+
+    # 1) escala plausível para N (usa a regra do script do professor)
+    maxN = max(1, int(2 * (Cp / Ci)))    # garante >=1
+    N = int(maxN * float(x[1]))
+    if N <= 0:
+        N = 1
+
+    # 2) M como fração de N (garante M <= N)
+    M = int(N * float(x[0]))
+    if M < 0: M = 0
+    if M > N: M = N
+
+    L = M  # requisito: L = M
+
+    # 3) T: escala usando tempo típico (professor usou (eta_x+eta_h)*4)
+    Tmax = (eta_x + eta_h) * 4.0
+    # evite divisão por zero
+    T = float(x[2]) * (Tmax / max(1, N))
+    if T <= 0:
+        T = Tmax / max(1, N)
+
+    # 4) delta: proporção vezes N*T, com piso delta_min
+    delta = float(x[3]) * (N * T)
+    if delta < delta_min:
+        delta = delta_min
+
+    return T, M, N, delta, L
+
 
 if st.button("▶️ Iniciar Otimização"):
     
     # Define a função objetivo que o otimizador tentará minimizar.
     def objetivo(x):
         """
-        Recebe um vetor 'x' com os parâmetros [T, M, N, delta],
-        chama a simulação e retorna o custo.
+        x: vetor normalizado [frac_M, frac_N, frac_T, frac_delta]
+        retorna taxa de custo (cost rate) para minimizar.
         """
-        # Desempacota os parâmetros da otimização
-        T_val, M_val, N_val, delta_val = x
+        try:
+            # mapeia x -> variáveis reais
+            T_val, M_val_int, N_val_int, delta_val, L_val = map_normalized_to_vars(x, params)
 
-        # Converte M e N para inteiros
-        M_val_int = int(round(M_val))
-        N_val_int = int(round(N_val))
+            # garante Coi = Ci conforme sua regra
+            Ci = params['Ci']
+            Coi = Ci
 
-        # Chama a simulação
-        resultado = calcular_metricas_completas(T_val, N_val_int, M_val_int, delta_val, params)
+            # chama a função local 'policy' (já definida no seu arquivo)
+            results = policy(
+                L_val, M_val_int, N_val_int, T_val, delta_val,
+                params['betax'], params['etax'], params['betah'], params['etah'],
+                params['lambd'], params['Cp'], params['Cop'], params['Ci'], Coi,
+                params['Cf'], params['Cep_max'], params['delta_min'], params['delta_limite'],
+                params['Dp'], params['Df']
+            )
 
-        # Se for inválido, retorna penalização alta
-        if resultado is None or "Custo" not in resultado:
+            if (results is None) or (not hasattr(results, '__len__')):
+                # solução inválida -> penaliza
+                print(f"[DEBUG objetivo] policy retornou inválido para x={x}")
+                return 1e9
+
+            # results[4] é cost_rate conforme policy() do professor
+            cost_rate = results[4]
+            if (cost_rate is None) or (np.isnan(cost_rate)) or (np.isinf(cost_rate)):
+                return 1e9
+
+            return float(cost_rate)
+
+        except Exception as e:
+            print(f"[ERRO objetivo] falha ao avaliar x={x}: {e}")
             return 1e9
-        else:
-            return resultado["Custo"]
 
     # Define os limites (bounds) para cada variável de otimização: [T, M, N, delta]
-    # É uma boa prática garantir que o limite superior de M seja menor que o inferior de N.
     bounds = [
-        (1.0, 200.0),  # T: entre 1 e 200
-        (1, 20),       # M: entre 1 e 20
-        (1, 20),       # N: entre 1 e 20 (permite N >= M)
-        (params['delta_min'], 300.0)  # delta: entre delta_min e 300
+        (0.0, 1.0),     # frac_M
+        (0.0, 1.0),     # frac_N
+        (0.0001, 1.0),  # frac_T  (evita zero absoluto)
+        (0.0, 1.0),     # frac_delta
     ]
 
     # Inicia a otimização com uma mensagem de espera
@@ -893,36 +949,32 @@ if st.button("▶️ Iniciar Otimização"):
         end_time = time.time()
         st.info(f"Otimização concluída em {(end_time - start_time) / 60:.2f} minutos.")
 
-# --- EXIBIÇÃO DOS RESULTADOS ---
-    # Pega os melhores valores encontrados
-    T_final, M_final, N_final, delta_final = resultado.x
-    custo_minimo = resultado.fun
-    
-    # Arredonda M e N para os valores inteiros finais
-    N_final_int = int(round(N_final))
-    M_final_int = int(round(M_final))
-    
-    # Recalcula as métricas finais com a melhor solução encontrada
-    metricas_otimas = calcular_metricas_completas(T_final, N_final_int, M_final_int, delta_final, params)
+    # --- EXIBIÇÃO DOS RESULTADOS (ajustada para vetor normalizado) ---
+    if not hasattr(resultado, "x") or resultado.x is None:
+        st.error("A otimização não retornou uma solução válida. Ajuste os bounds/parametros e tente novamente.")
+    else:
+        # vetor 'x' retornado é normalizado -> converte para variáveis reais
+        x_opt = resultado.x
+        T_final_real, M_final_int, N_final_int, delta_final_real, L_final = map_normalized_to_vars(x_opt, params)
 
-    if metricas_otimas:
-        # Armazena os resultados no session_state para uso posterior
-        st.session_state['politica_otimizada'] = (T_final, N_final_int, M_final_int, delta_final)
+        # Recalcula métricas finais com a melhor solução encontrada (usa sua função existente)
+        metricas_otimas = calcular_metricas_completas(T_final_real, N_final_int, M_final_int, delta_final_real, params)
 
-        # Exibe as variáveis de decisão ótimas
-        st.markdown("##### 🔍 Política Ótima Encontrada")
-        r_col1, r_col2, r_col3, r_col4 = st.columns(4)
-        r_col1.metric("🕒 T ótimo", f"{T_final:.2f}")
-        r_col2.metric("🔢 M ótimo", f"{M_final_int}")
-        r_col3.metric("🔢 N ótimo", f"{N_final_int}")
-        r_col4.metric("⏱️ δ ótimo", f"{delta_final:.2f}")
+        if metricas_otimas:
+            st.session_state['politica_otimizada'] = (T_final_real, N_final_int, M_final_int, delta_final_real)
+            st.markdown("##### 🔍 Política Ótima Encontrada")
+            r_col1, r_col2, r_col3, r_col4 = st.columns(4)
+            r_col1.metric("🕒 T ótimo", f"{T_final_real:.2f}")
+            r_col2.metric("🔢 M ótimo", f"{M_final_int}")
+            r_col3.metric("🔢 N ótimo", f"{N_final_int}")
+            r_col4.metric("⏱️ δ ótimo", f"{delta_final_real:.2f}")
 
-        # Exibe as métricas de desempenho ótimas
-        st.markdown("##### 🎯 Desempenho da Política Ótima")
-        m_col1, m_col2, m_col3 = st.columns(3)
-        m_col1.metric("💰 Custo Mínimo", f"{custo_minimo:.4f}")
-        m_col2.metric("📈 Disponibilidade", f"{metricas_otimas['Disponibilidade']:.2%}")
-        m_col3.metric("🛠️ MTBOF", f"{metricas_otimas['MTBOF']:.2f}")
+            # métricas
+            m_col1, m_col2, m_col3 = st.columns(3)
+            m_col1.metric("💰 Custo Mínimo", f"{resultado.fun:.4f}")
+            # se você não quer mostrar disponibilidade, não exiba aqui (veja abaixo)
+            # m_col2.metric("📈 Disponibilidade", f"{metricas_otimas['Disponibilidade']:.2%}")
+            m_col3.metric("🛠️ MTBOF", f"{metricas_otimas['MTBOF']:.2f}")
     else:
         #st.error("A otimização encontrou uma combinação de parâmetros instável. Tente novamente.")
         pass
@@ -1038,15 +1090,6 @@ if 'politica_manual' in st.session_state:
             axes[0].text(0.02, 0.95, f"Média = {media_custo:.4f}\nDesvio Padrão = {std_custo:.4f}",
                          transform=axes[0].transAxes, fontsize=10, color='black',
                          verticalalignment='top', horizontalalignment='left')
-
-            # --- Gráfico 2: Disponibilidade  ---
-            #axes[1].boxplot(df_resultados['Disponibilidade'], vert=False, patch_artist=True, boxprops=dict(facecolor='lightcoral'))
-            #media_disp = df_resultados['Disponibilidade'].mean()
-            #std_disp = df_resultados['Disponibilidade'].std()
-            #axes[1].set_title('Box-plot para Disponibilidade', loc='left', fontsize=12, color='black')
-            #axes[1].text(0.02, 0.95, f"Média = {media_disp:.2%}\nDesvio Padrão = {std_disp:.2%}",
-                         #transform=axes[1].transAxes, fontsize=10, color='black',
-                         #verticalalignment='top', horizontalalignment='left')
             
             # --- Gráfico 3: MTBOF ---
             axes[2].boxplot(df_resultados['MTBOF'], vert=False, patch_artist=True, boxprops=dict(facecolor='lightgreen'))
@@ -1080,6 +1123,7 @@ st.markdown("""
     <a href='http://random.org.br' target='_blank' style='color:#888;'>Acesse o site do RANDOM</a>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
