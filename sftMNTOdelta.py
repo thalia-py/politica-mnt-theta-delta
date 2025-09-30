@@ -924,7 +924,7 @@ if st.button("▶️ Iniciar Otimização"):
         m_col2.metric("📈 Disponibilidade", f"{metricas_otimas['Disponibilidade']:.2%}")
         m_col3.metric("🛠️ MTBOF", f"{metricas_otimas['MTBOF']:.2f}")
     else:
-        st.error("A otimização encontrou uma combinação de parâmetros instável. Tente novamente.")
+        #st.error("A otimização encontrou uma combinação de parâmetros instável. Tente novamente.")
 
 # =============================================================================
 # SEÇÃO DE AVALIAÇÃO MANUAL
@@ -1079,6 +1079,7 @@ st.markdown("""
     <a href='http://random.org.br' target='_blank' style='color:#888;'>Acesse o site do RANDOM</a>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
